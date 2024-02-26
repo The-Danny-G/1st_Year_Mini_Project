@@ -1,0 +1,35 @@
+---
+title: "Initial R Code"
+author: "Daniel Gardner"
+date: "2024-02-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Using BoolNet to load SBML data of Prostate Cancer
+library(BoolNet)
+Model<-loadSBML("Montagud2022_Prostate_Cancer.sbml")
+
+
+# Creating list of genes and then data frame of their values
+Genes<-Model$genes
+num.genes<-length(Genes)
+Data<-data.frame(Genes=Genes,Values=rep(0,num.genes),Rules=rep("none",num.genes))
+
+# Creating separate boolean variables for every single gene
+# Also adding in each Gene's boolean rule as a character string
+for (i in 1:num.genes){
+  assign(Genes[i],TRUE)
+  Data$Rules[i]<-Model$interactions[[i]][3][[1]]
+}
+
+
+
+
+#eval(parse(text=test))
+```
+
