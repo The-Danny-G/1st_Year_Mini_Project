@@ -51,10 +51,10 @@ Output_Genes<-c('EMT','Migration','Metastasis','Invasion','Apoptosis','CCA')
 
 ```{r}
 # Number of Simulations
-N<-1500
+N<-2000
 
 # Number of steps per simulation
-K<-1000
+K<-1500
 
 # List of stable state outputs
 Stable_States<-list(rep(NA,N))
@@ -79,10 +79,10 @@ for(j in 1:N){
       Cur.Val<-Time_Series$Values
       
       # Vector of exponential times based off the degree of each gene
-      #Times<-sapply(Time_Series$Degree,function(x){return(rexp(1,x))})
+      Times<-sapply(Time_Series$Degree,function(x){return(rexp(1,x))})
       # Activated gene is that with the minimum time
-      #Gene<-Time_Series$Genes[which(Times==min(Times))]
-      Gene<-sample(Variable_Genes,1)
+      Gene<-Time_Series$Genes[which(Times==min(Times))]
+      #Gene<-sample(Variable_Genes,1)
       
       
       # For the given gene,find its rule, current value, and whether it is being activated
@@ -116,7 +116,7 @@ for(j in 1:N){
   }
     # Log the final value of the chain as the stable state for simulation j
     #Stable_States[[j]]<-Time_Series$Values[Time_Series$Genes %in% Output_Genes]
-    Stable_States[[j]]<-c(Time_Series$Values,Data$Values[Data$Genes %in% Input_Genes])
+    Stable_States[[j]]<-c(Data$Values[Data$Genes %in% Input_Genes],Time_Series$Values)
     # Plot whether the chain converged
     #plot(Did.Change,typ='l')
 }
@@ -129,9 +129,32 @@ length(unique(Stable_States))
 ```{r}
 # Printing stable states
 for (state in unique(Stable_States)){
-  print(c(Variable_Genes,Input_Genes)[as.logical(state)])
+  print(c(Input_Genes,Variable_Genes)[as.logical(state)])
 }
 ```
 
 
+```{r}
+# Probabilities of stable states
+
+Probs<-c()
+
+for (stable in unique(Stable_States)){
+  count<-0
+  for (state in Stable_States){
+    if (all(state==stable)){
+      count <-count +1
+    }
+  }
+  Probs<-append(Probs,count/N)
+}
+
+
+plot(Probs)
+```
+
+```{r}
+test<-c(0.00546, 0.01752,0.02584,0.12276,0.10904,0.24962,0.12348,0.12174,0.22418)
+plot(test)
+```
 
