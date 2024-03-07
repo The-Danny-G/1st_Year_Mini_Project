@@ -1,5 +1,5 @@
 ---
-title: "Initial R Code"
+title: "Cohen_Full"
 author: "Daniel Gardner"
 date: "2024-02-26"
 output: html_document
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r warning=FALSE}
 # Using BoolNet to load bnet data of the simplest model from Cohen 2015
 library(BoolNet)
-Model<-loadNetwork('Models/CohenSimpleModel.bnet')
+Model<-loadNetwork('Models/Cohen_Full.bnet')
 
 # Creating list of genes
 Genes<-Model$genes
@@ -36,15 +36,16 @@ for (i in 1:num.genes){
 
 # Turing Genes permanently off or on
 
-#Data$Rules[Data$Genes=='Notch_pthw']<-'TRUE'
-#Data$Rules[Data$Genes=='WNT_pthw']<-'TRUE'
+Data$Rules[Data$Genes=='p53']<-'TRUE'
+#Data$Rules[Data$Genes=='miR34']<-'TRUE'
+Data$Rules[Data$Genes=='ERK']<-'TRUE'
 
 # Differentiating input genes which don't change and variable ones that do
 Input_Genes<-c('ECMicroenv','DNAdamage')
 Variable_Genes<-Genes[!(Genes%in%Input_Genes)]
 
 # Creating list of output genes
-Output_Genes<-c('EMT','Migration','Metastasis','Invasion','Apoptosis','CCA')
+Output_Genes<-c('EMT','Migration','Metastasis','Invasion','Apoptosis','CellCycleArrest')
 ```
 
 # Initial test with a few steps
@@ -122,7 +123,7 @@ for(j in 1:N){
 }
 
 
-# How many stable states there are (SHOULD BE 9)  
+# How many stable states there are 
 length(unique(Stable_States))
 ```
 
