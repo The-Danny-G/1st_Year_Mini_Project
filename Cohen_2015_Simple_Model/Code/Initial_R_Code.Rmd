@@ -11,6 +11,32 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Setup
 
+Here I import the model as used in the paper and then create the data frame we will be using throughout the code.
+
+To begin with, I used the model in its BoolNet form (.bnet), as sometimes loading from SBML form was unreliable. However using either `loadNetwork()` for a .bnet file or `loadSBML()` for an .SBML file load the same model. The model consists of a list of three sections:
+
+-   `genes`: a character list of all genes (nodes) used in the model
+
+-   `fixed`: a vector of all genes to flag whether a gene would be 'fixed' during the simulation
+
+-   `interactions`: a list of all genes, each containing a list of all the gene's input nodes, their Boolean rule, and the Boolean rule in truth table format
+
+Using this, I then created a dataset consisting of:
+
+-   Genes: the character list of all genes
+
+-   Values: The Boolean value of each gene (i.e. 0 or 1)
+
+-   Rules: The Boolean rule of each gene, stored as a character of a Boolean rule
+
+-   Degree: The number of input nodes going into each gene
+
+I also created an individual Boolean variable for each gene, so this way when using `eval(parse(text=Rule))` , the function returned a Boolean output.
+
+I also made sure to differentiate the input genes, 'variable genes' which would change during the time series, and output genes.
+
+Finally whilst currently commented out, I used this chunk to store initial conditions for now, such as turning one or multiple genes either permanently off or on (i.e. setting both their variable and Boolean rule to 'TRUE'/'FALSE').
+
 ```{r warning=FALSE}
 # Using BoolNet to load bnet data of the simplest model from Cohen 2015
 library(BoolNet)
@@ -47,7 +73,11 @@ Variable_Genes<-Genes[!(Genes%in%Input_Genes)]
 Output_Genes<-c('EMT','Migration','Metastasis','Invasion','Apoptosis','CCA')
 ```
 
-# Initial test with a few steps
+# Simulation
+
+Here I run N=2000 simulations of the discrete time Markov chain model of simulation, using K=1500 steps for each simulation. For each simulation, I randomised the value of ALL genes, including the two input genes. I then performed the Markov chain simulation on all variable genes, picking the gene to be updated at each step either uniformly random or using the 'exponential clock' method. (Note that the latter is much slower).
+
+Whilst currently commented out, I sometimes plotted a graph of how many times the Markov chain changed over the 1500 steps, just to verify that it had converged.
 
 ```{r}
 # Number of Simulations
@@ -79,10 +109,10 @@ for(j in 1:N){
       Cur.Val<-Time_Series$Values
       
       # Vector of exponential times based off the degree of each gene
-      Times<-sapply(Time_Series$Degree,function(x){return(rexp(1,x))})
+      #Times<-sapply(Time_Series$Degree,function(x){return(rexp(1,x))})
       # Activated gene is that with the minimum time
-      Gene<-Time_Series$Genes[which(Times==min(Times))]
-      #Gene<-sample(Variable_Genes,1)
+      #Gene<-Time_Series$Genes[which(Times==min(Times))]
+      Gene<-sample(Variable_Genes,1)
       
       
       # For the given gene,find its rule, current value, and whether it is being activated
@@ -122,9 +152,11 @@ for(j in 1:N){
 }
 
 
-# How many stable states there are (SHOULD BE 9)  
+# How many stable states there are (SHOULD BE 9 WITH NO GENE KNOCKOUTS)  
 length(unique(Stable_States))
 ```
+
+Now that the amount of stable states matched that given by MaBoSS and GINsim, I can check whether the states match up. To do this I simply matched the output of the Time Series (a string of 1s and 0s) to a character list of all genes.
 
 ```{r}
 # Printing stable states
@@ -133,6 +165,7 @@ for (state in unique(Stable_States)){
 }
 ```
 
+I then attempted to estimate the probability of being in each state simply by calculating the proportions of each unique steady state over all steady states. I then checked these probabilities visually against the probabilities returned by MaBoSS for the same experiment. Whilst there is no standard order of stable states so the order may be different, you would expect the values to still match. However when looking at the two graphs we can see this is currently not the case.
 
 ```{r}
 # Probabilities of stable states
@@ -150,11 +183,10 @@ for (stable in unique(Stable_States)){
 }
 
 
-plot(Probs)
+plot(sort(Probs))
 ```
 
 ```{r}
-test<-c(0.00546, 0.01752,0.02584,0.12276,0.10904,0.24962,0.12348,0.12174,0.22418)
-plot(test)
+MaBoSS_results<-c(0.00546, 0.01752,0.02584,0.12276,0.10904,0.24962,0.12348,0.12174,0.22418)
+plot(sort(MaBoSS_results))
 ```
-

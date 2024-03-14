@@ -11,6 +11,32 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Setup
 
+Here I import the model as used in the paper and then create the data frame we will be using throughout the code.
+
+To begin with, I used the model in its BoolNet form (.bnet), as sometimes loading from SBML form was unreliable. However using either `loadNetwork()` for a .bnet file or `loadSBML()` for an .SBML file load the same model. The model consists of a list of three sections:
+
+-   `genes`: a character list of all genes (nodes) used in the model
+
+-   `fixed`: a vector of all genes to flag whether a gene would be 'fixed' during the simulation
+
+-   `interactions`: a list of all genes, each containing a list of all the gene's input nodes, their Boolean rule, and the Boolean rule in truth table format
+
+Using this, I then created a dataset consisting of:
+
+-   Genes: the character list of all genes
+
+-   Values: The Boolean value of each gene (i.e. 0 or 1)
+
+-   Rules: The Boolean rule of each gene, stored as a character of a Boolean rule
+
+-   Degree: The number of input nodes going into each gene
+
+I also created an individual Boolean variable for each gene, so this way when using `eval(parse(text=Rule))` , the function returned a Boolean output.
+
+I also made sure to differentiate the input genes, 'variable genes' which would change during the time series, and output genes.
+
+Finally whilst currently commented out, I used this chunk to store initial conditions for now, such as turning one or multiple genes either permanently off or on (i.e. setting both their variable and Boolean rule to 'TRUE'/'FALSE').
+
 ```{r warning=FALSE}
 # Using BoolNet to load bnet data of the simplest model from Cohen 2015
 library(BoolNet)
@@ -36,9 +62,9 @@ for (i in 1:num.genes){
 
 # Turing Genes permanently off or on
 
-Data$Rules[Data$Genes=='p53']<-'TRUE'
+#Data$Rules[Data$Genes=='p53']<-'TRUE'
 #Data$Rules[Data$Genes=='miR34']<-'TRUE'
-Data$Rules[Data$Genes=='ERK']<-'TRUE'
+#Data$Rules[Data$Genes=='ERK']<-'TRUE'
 
 # Differentiating input genes which don't change and variable ones that do
 Input_Genes<-c('ECMicroenv','DNAdamage')
@@ -48,7 +74,11 @@ Variable_Genes<-Genes[!(Genes%in%Input_Genes)]
 Output_Genes<-c('EMT','Migration','Metastasis','Invasion','Apoptosis','CellCycleArrest')
 ```
 
-# Initial test with a few steps
+# Simulation
+
+Here I run N=1500 simulations of the discrete time Markov chain model of simulation, using K=1000 steps for each simulation. For each simulation, I randomised the value of ALL genes, including the two input genes. I then performed the Markov chain simulation on all variable genes, picking the gene to be updated at each step either uniformly random or using the 'exponential clock' method. (Note that the latter is much slower).
+
+Whilst currently commented out, I sometimes plotted a graph of how many times the Markov chain changed over the 1500 steps, just to verify that it had converged.
 
 ```{r}
 # Number of Simulations
