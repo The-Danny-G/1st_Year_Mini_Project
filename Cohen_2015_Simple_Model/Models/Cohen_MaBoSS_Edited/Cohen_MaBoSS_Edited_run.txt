@@ -1,0 +1,193 @@
+
+-------------------------------------------------- Run --------------------------------------------------
+MaBoSS version: 2.5.4 [networks up to 64 nodes]
+
+Run start time: Thu Mar 21 13:47:04 2024
+Run end time: Thu Mar 21 13:47:04 2024
+
+Core user runtime: 0.13 secs using 4 threads
+Core elapsed runtime: 0.035 secs using 4 threads
+
+Epilogue user runtime: 0 secs using 1 thread
+Epilogue elapsed runtime: 0 secs using 1 thread
+
+StatDist user runtime: 0 secs using 1 thread
+StatDist elapsed runtime: 0 secs using 1 thread
+
+Time Tick: 10
+Max Time: 500
+Sample Count: 5000
+StatDist Trajectory Count: 100
+StatDist Similarity Cache Maximum Size: 20000
+Discrete Time: FALSE
+Random Generator: rand48
+Seed Pseudo Random: 100
+Generated Number Count: 138687
+
+---------------------------------------------------------------------------------------------------------
+
+------------------------------------------------ Network ------------------------------------------------
+node ECMicroenv {
+  logic = (ECMicroenv);
+  rate_up = (@logic ? $u_ECMicroenv : 0);
+  rate_down = (@logic ? 0 : $d_ECMicroenv);
+}
+
+node DNAdamage {
+  logic = (DNAdamage);
+  rate_up = (@logic ? $u_DNAdamage : 0);
+  rate_down = (@logic ? 0 : $d_DNAdamage);
+}
+
+node GF {
+  logic = ((((GF OR EMTreg)) AND NOT Ecadh));
+  rate_up = (@logic ? $u_GF : 0);
+  rate_down = (@logic ? 0 : $d_GF);
+}
+
+node EMTreg {
+  logic = ((((Notch_pthw OR (WNT_pthw OR EMTreg))) AND (NOT miRNA AND NOT p53)));
+  rate_up = (@logic ? $u_EMTreg : 0);
+  rate_down = (@logic ? 0 : $d_EMTreg);
+}
+
+node Ecadh {
+  logic = ((NOT EMTreg AND NOT AKT2));
+  rate_up = (@logic ? $u_Ecadh : 0);
+  rate_down = (@logic ? 0 : $d_Ecadh);
+}
+
+node Migration {
+  logic = ((EMT AND (ERK_pthw AND (AKT2 AND (Invasion AND (NOT AKT1 AND (NOT miRNA AND NOT p63_73)))))));
+  rate_up = (@logic ? $u_Migration : 0);
+  rate_down = (@logic ? 0 : $d_Migration);
+}
+
+node Metastasis {
+  logic = (Migration);
+  rate_up = (@logic ? $u_Metastasis : 0);
+  rate_down = (@logic ? 0 : $d_Metastasis);
+}
+
+node EMT {
+  logic = ((NOT Ecadh AND EMTreg));
+  rate_up = (@logic ? $u_EMT : 0);
+  rate_down = (@logic ? 0 : $d_EMT);
+}
+
+node ERK_pthw {
+  logic = ((((TGFb_pthw OR (Notch_pthw OR (GF OR EMTreg)))) AND NOT AKT1));
+  rate_up = (@logic ? $u_ERK_pthw : 0);
+  rate_down = (@logic ? 0 : $d_ERK_pthw);
+}
+
+node AKT2 {
+  logic = ((((TGFb_pthw OR (GF OR (Notch_pthw OR EMTreg)))) AND (EMTreg AND (NOT miRNA AND NOT p53))));
+  rate_up = (@logic ? $u_AKT2 : 0);
+  rate_down = (@logic ? 0 : $d_AKT2);
+}
+
+node Invasion {
+  logic = ((((TGFb_pthw AND EMTreg)) OR WNT_pthw));
+  rate_up = (@logic ? $u_Invasion : 0);
+  rate_down = (@logic ? 0 : $d_Invasion);
+}
+
+node AKT1 {
+  logic = ((WNT_pthw AND (((Notch_pthw OR (TGFb_pthw OR (GF OR EMTreg)))) AND (NOT miRNA AND (NOT p53 AND NOT Ecadh)))));
+  rate_up = (@logic ? $u_AKT1 : 0);
+  rate_down = (@logic ? 0 : $d_AKT1);
+}
+
+node miRNA {
+  logic = ((((p53 OR p63_73)) AND (NOT AKT2 AND (NOT EMTreg AND NOT AKT1))));
+  rate_up = (@logic ? $u_miRNA : 0);
+  rate_down = (@logic ? 0 : $d_miRNA);
+}
+
+node p63_73 {
+  logic = ((NOT Notch_pthw AND (NOT p53 AND (DNAdamage AND (NOT AKT2 AND (NOT AKT1 AND NOT EMTreg))))));
+  rate_up = (@logic ? $u_p63_73 : 0);
+  rate_down = (@logic ? 0 : $d_p63_73);
+}
+
+node TGFb_pthw {
+  logic = ((((Notch_pthw OR ECMicroenv)) AND (NOT WNT_pthw AND NOT miRNA)));
+  rate_up = (@logic ? $u_TGFb_pthw : 0);
+  rate_down = (@logic ? 0 : $d_TGFb_pthw);
+}
+
+node WNT_pthw {
+  logic = ((NOT Notch_pthw AND (NOT EMTreg AND (NOT miRNA AND (NOT p53 AND (NOT p63_73 AND (NOT AKT1 AND (NOT Ecadh AND NOT WNT_pthw))))))));
+  rate_up = (@logic ? $u_WNT_pthw : 0);
+  rate_down = (@logic ? 0 : $d_WNT_pthw);
+}
+
+node p53 {
+  logic = ((((Notch_pthw OR (DNAdamage OR WNT_pthw))) AND (NOT AKT1 AND (NOT AKT2 AND (NOT p63_73 AND NOT EMTreg)))));
+  rate_up = (@logic ? $u_p53 : 0);
+  rate_down = (@logic ? 0 : $d_p53);
+}
+
+node Apoptosis {
+  logic = ((NOT ERK_pthw AND (NOT AKT1 AND (NOT EMTreg AND ((miRNA OR (p63_73 OR p53)))))));
+  rate_up = (@logic ? $u_Apoptosis : 0);
+  rate_down = (@logic ? 0 : $d_Apoptosis);
+}
+
+node Notch_pthw {
+  logic = ((ECMicroenv AND (NOT p53 AND (NOT p63_73 AND NOT miRNA))));
+  rate_up = (@logic ? $u_Notch_pthw : 0);
+  rate_down = (@logic ? 0 : $d_Notch_pthw);
+}
+
+node CCA {
+  logic = ((((((((p53 OR (p63_73 OR (((TGFb_pthw AND Notch_pthw)) OR AKT2)))) AND NOT ERK_pthw)) OR (miRNA OR EMTreg))) AND NOT AKT1));
+  rate_up = (@logic ? $u_CCA : 0);
+  rate_down = (@logic ? 0 : $d_CCA);
+}
+---------------------------------------------------------------------------------------------------------
+
+----------------------------------------------- Variables -----------------------------------------------
+$d_AKT1 = 1;
+$d_AKT2 = 1;
+$d_Apoptosis = 1;
+$d_CCA = 1;
+$d_DNAdamage = 1;
+$d_ECMicroenv = 1;
+$d_EMT = 1;
+$d_EMTreg = 1;
+$d_ERK_pthw = 1;
+$d_Ecadh = 1;
+$d_GF = 1;
+$d_Invasion = 1;
+$d_Metastasis = 1;
+$d_Migration = 1;
+$d_Notch_pthw = 1;
+$d_TGFb_pthw = 1;
+$d_WNT_pthw = 1;
+$d_miRNA = 1;
+$d_p53 = 1;
+$d_p63_73 = 1;
+$u_AKT1 = 1;
+$u_AKT2 = 1;
+$u_Apoptosis = 1;
+$u_CCA = 1;
+$u_DNAdamage = 1;
+$u_ECMicroenv = 1;
+$u_EMT = 1;
+$u_EMTreg = 1;
+$u_ERK_pthw = 1;
+$u_Ecadh = 1;
+$u_GF = 1;
+$u_Invasion = 1;
+$u_Metastasis = 1;
+$u_Migration = 1;
+$u_Notch_pthw = 1;
+$u_TGFb_pthw = 1;
+$u_WNT_pthw = 1;
+$u_miRNA = 1;
+$u_p53 = 1;
+$u_p63_73 = 1;
+---------------------------------------------------------------------------------------------------------
+

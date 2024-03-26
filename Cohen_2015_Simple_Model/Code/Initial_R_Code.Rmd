@@ -182,11 +182,56 @@ for (stable in unique(Stable_States)){
   Probs<-append(Probs,count/N)
 }
 
-
 plot(sort(Probs))
 ```
 
 ```{r}
-MaBoSS_results<-c(0.00546, 0.01752,0.02584,0.12276,0.10904,0.24962,0.12348,0.12174,0.22418)
-plot(sort(MaBoSS_results))
+MaBoSS_results<-read.csv('Models/Cohen_MaBoSS_Edited/Cohen_MaBoSS_Edited_fp.csv', sep = "\t",skip=1)
+
+MaBoSS_Probs<-MaBoSS_results$Proba
+
+MaBoSS_Mat<-MaBoSS_results[,4:23]
+
+n<-nrow(MaBoSS_Mat)
+maboss_states<-list(rep(NA,n))
+for(i in 1:n){
+  
+  maboss_states[[i]]<-colnames(MaBoSS_Mat)[as.logical(MaBoSS_Mat[i,])]
+  
+}
+
+par(mfrow=c(1,2))
+
+plot(sort(Probs))
+plot(sort(MaBoSS_Probs))
 ```
+```{r}
+test2<-MaBoSS_Mat[,c(Input_Genes,Variable_Genes)]
+```
+
+
+```{r}
+ProbData=data.frame(State=rep(0,n),Myprob=Probs,mabprobs=rep(0,n))
+for (i in 1:n){
+  
+  val<-0
+  
+  for(j in 1:n){
+    
+    if(!all(MaBoSS_Mat[,c(Input_Genes,Variable_Genes)][j,-c(1,2)]==unique(Stable_States)[[i]][-c(1,2)]))
+      
+    val<-val+1
+  }
+  print(val)
+}
+```
+
+```{r}
+unique(Stable_States)
+```
+
+```{r}
+Variable_Genes
+```
+
+
