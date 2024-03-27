@@ -1,0 +1,11 @@
+Fixed Points (9)
+FP	Proba	State	ECMicroenv	DNAdamage	GF	EMTreg	Ecadh	Migration	Metastasis	EMT	ERK_pthw	AKT2	Invasion	AKT1	miRNA	p63_73	TGFb_pthw	WNT_pthw	p53	Apoptosis	Notch_pthw	CCA
+#1	0.05902	DNAdamage -- Ecadh -- miRNA -- p63_73 -- Apoptosis -- CCA	0	1	0	0	1	0	0	0	0	0	0	0	1	1	0	0	0	1	0	1
+#2	0.0828	ECMicroenv -- DNAdamage -- Ecadh -- miRNA -- p53 -- Apoptosis -- CCA	1	1	0	0	1	0	0	0	0	0	0	0	1	0	0	0	1	1	0	1
+#3	0.10286	DNAdamage -- GF -- EMTreg -- EMT -- ERK_pthw -- AKT2 -- CCA	0	1	1	1	0	0	0	1	1	1	0	0	0	0	0	0	0	0	0	1
+#4	0.11022	GF -- EMTreg -- EMT -- ERK_pthw -- AKT2 -- CCA	0	0	1	1	0	0	0	1	1	1	0	0	0	0	0	0	0	0	0	1
+#5	0.24998	ECMicroenv -- GF -- EMTreg -- Migration -- Metastasis -- EMT -- ERK_pthw -- AKT2 -- Invasion -- TGFb_pthw -- Notch_pthw -- CCA	1	0	1	1	0	1	1	1	1	1	1	0	0	0	1	0	0	0	1	1
+#6	0.12484	ECMicroenv -- DNAdamage -- GF -- EMTreg -- Migration -- Metastasis -- EMT -- ERK_pthw -- AKT2 -- Invasion -- TGFb_pthw -- Notch_pthw -- CCA	1	1	1	1	0	1	1	1	1	1	1	0	0	0	1	0	0	0	1	1
+#7	0.0424	ECMicroenv -- DNAdamage -- Ecadh -- miRNA -- p63_73 -- Apoptosis -- CCA	1	1	0	0	1	0	0	0	0	0	0	0	1	1	0	0	0	1	0	1
+#8	0.08808	DNAdamage -- Ecadh -- miRNA -- p53 -- Apoptosis -- CCA	0	1	0	0	1	0	0	0	0	0	0	0	1	0	0	0	1	1	0	1
+#9	0.1398	Ecadh	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0

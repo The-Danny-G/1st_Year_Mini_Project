@@ -73,7 +73,7 @@ Variable_Genes<-Genes[!(Genes%in%Input_Genes)]
 Output_Genes<-c('EMT','Migration','Metastasis','Invasion','Apoptosis','CCA')
 ```
 
-# Simulation
+# Simulation 1: Component-wise changes
 
 Here I run N=2000 simulations of the discrete time Markov chain model of simulation, using K=1500 steps for each simulation. For each simulation, I randomised the value of ALL genes, including the two input genes. I then performed the Markov chain simulation on all variable genes, picking the gene to be updated at each step either uniformly random or using the 'exponential clock' method. (Note that the latter is much slower).
 
@@ -81,7 +81,7 @@ Whilst currently commented out, I sometimes plotted a graph of how many times th
 
 ```{r}
 # Number of Simulations
-N<-2000
+N<-1000
 
 # Number of steps per simulation
 K<-1500
@@ -171,7 +171,6 @@ I then attempted to estimate the probability of being in each state simply by ca
 # Probabilities of stable states
 
 Probs<-c()
-
 for (stable in unique(Stable_States)){
   count<-0
   for (state in Stable_States){
@@ -181,17 +180,17 @@ for (stable in unique(Stable_States)){
   }
   Probs<-append(Probs,count/N)
 }
-
-plot(sort(Probs))
 ```
 
 ```{r}
-MaBoSS_results<-read.csv('Models/Cohen_MaBoSS_Edited/Cohen_MaBoSS_Edited_fp.csv', sep = "\t",skip=1)
+# Importing MaBoSS results
+MaBoSS_results<-read.csv('Models/Cohen_MaBoSS_out_fp.csv', sep = "\t",skip=1)
 
+# Getting probabilities of all 9 stable states
 MaBoSS_Probs<-MaBoSS_results$Proba
 
+# Getting all 9 stable states
 MaBoSS_Mat<-MaBoSS_results[,4:23]
-
 n<-nrow(MaBoSS_Mat)
 maboss_states<-list(rep(NA,n))
 for(i in 1:n){
@@ -199,39 +198,234 @@ for(i in 1:n){
   maboss_states[[i]]<-colnames(MaBoSS_Mat)[as.logical(MaBoSS_Mat[i,])]
   
 }
-
-par(mfrow=c(1,2))
-
-plot(sort(Probs))
-plot(sort(MaBoSS_Probs))
-```
-```{r}
-test2<-MaBoSS_Mat[,c(Input_Genes,Variable_Genes)]
 ```
 
-
 ```{r}
-ProbData=data.frame(State=rep(0,n),Myprob=Probs,mabprobs=rep(0,n))
-for (i in 1:n){
+# Syncing up MaBoSS states and our states so probabilities match
+
+Named_Stable_States<-list(rep(NA,num.genes))
+g<-1
+for (state in unique(Stable_States)){
+  #print(c(rev(Input_Genes),Variable_Genes)[as.logical(state)])
+  Named_Stable_States[[g]]<-c(rev(Input_Genes),Variable_Genes)[as.logical(state)]
+  g<-g+1
+}
+
+new.order<-rep(0,9)
+for (i in 1:9){
   
-  val<-0
-  
-  for(j in 1:n){
+  for(j in 1:9){
     
-    if(!all(MaBoSS_Mat[,c(Input_Genes,Variable_Genes)][j,-c(1,2)]==unique(Stable_States)[[i]][-c(1,2)]))
+    if(all(maboss_states[[i]] %in% Named_Stable_States[[j]]) & length(maboss_states[[i]])==length(Named_Stable_States[[j]])){
       
-    val<-val+1
+      new.order[j]<-i
+    }
+  
   }
-  print(val)
+
+}
+
+```
+
+```{r}
+# Plotting
+plot(Probs,ylim=c(0,.4))
+points(MaBoSS_Probs[new.order],col='red')
+```
+
+# Simulation 2: State-wise changes
+
+I now chose to follow the algorithm as described in the Stoll et. al. (2012) paper explicitly, changing the state each time instead of the component. Essentially the main change here is that from each state, I check each component to see if it is currently being activated or repressed, and then randomly select one of THESE components to update instead of all components.
+
+This way, an update to the state happens at every step instead of randomly, with lots of steps having nothing happen. This also makes it easier to show convergence, since when we reach a state such that no component is being affected, we know for certain we have reached a steady state. This improves the efficiency of the algorithm greatly.
+
+```{r}
+# REDOING SIMULATION ARLGORITHM BASED OFF MABOSS METHOD
+
+# Number of Simulations
+N<-10000
+
+# Maximum number of steps per simulation
+K<-300
+
+# Size of network
+L<-num.genes-length(Input_Genes)
+
+sims<-c()
+
+# List of stable state outputs
+Stable_States<-list(rep(NA,N))
+
+for(j in 1:N){
+  
+    go<-TRUE
+    
+    #Creating random initial values of ALL genes
+    #Data$Values[Data$Genes %in% c('ECMicroenv','DNAdamage','GF','TGFb_pthw')]<-sample(c(0,1),4,replace = T)
+    #Data$Values[!Data$Genes %in% c('ECMicroenv','DNAdamage','GF','TGFb_pthw')]<-rep(0,num.genes-4)
+    Data$Values<-sample(c(0,1),num.genes,replace=TRUE)
+    
+    for (i in 1:num.genes){
+    assign(Genes[i],as.logical(Data$Values[i]))
+    }
+    
+    # Defining time series of JUST the variable genes
+    Time_Series<-Data[Data$Genes %in% Variable_Genes,]
+  
+  for (k in 1:K){
+    
+    sim<-1
+    
+    while(go){
+      
+          Cur.State<-Time_Series$Values
+    
+          # Checking which components will change when updated
+          # I.e. which state changes are an asynchronous transition
+          
+          Does.Change<-rep(FALSE,L)
+          for (l in 1:L){
+            
+              Gen.act<-eval(parse(text=Time_Series$Rules[l]))
+              # If activated and off, change induced
+              if (Gen.act & Time_Series$Values[l]==0){
+                Does.Change[l]<-TRUE
+            }
+              # If repressed and on, change induced
+              if(!Gen.act & Time_Series$Values[l]==1){
+                Does.Change[l]<-TRUE
+              }
+            
+          }
+          
+          # Creating list of actual step-specific variable genes
+          Step_Variable_Genes<-Variable_Genes[Does.Change]
+          #print(Step_Variable_Genes)
+          
+          if(length(Step_Variable_Genes)==0){
+            # Log the final value of the chain as the stable state for simulation j
+            Stable_States[[j]]<-c(Data$Values[Data$Genes %in% Input_Genes],Time_Series$Values)
+            sims<-append(sims,sim)
+            go<-FALSE
+            
+            
+          }
+          
+          else{
+            
+                # Then simply repeat the process as before
+                sim<-sim+1
+              
+                Gene<-sample(Step_Variable_Genes,1)
+                
+                
+                # For the given gene,find its rule, current value, and whether it is being activated
+                Rule<-Data[Data$Genes==Gene,3]
+                Gen.act<-eval(parse(text=Rule))
+                cur.val<-Time_Series$Values[Time_Series$Genes==Gene]
+                
+                # If activated and off, turn on
+                if (Gen.act & cur.val==0){
+                  Time_Series$Values[Time_Series$Genes==Gene]<-1
+                  assign(Gene,TRUE)
+                
+              }
+                # If repressed and on, turn off
+                else if(!Gen.act & cur.val==1){
+                  Time_Series$Values[Time_Series$Genes==Gene]<-0
+                  assign(Gene,FALSE)
+                  
+                # Else, do nothing
+                
+                }
+            
+          }
+      
+      
+    }
+
+    
+      
+    
+    
+      
+  }
+    
+}
+
+
+# How many stable states there are (SHOULD BE 9 WITH NO GENE KNOCKOUTS)  
+length(unique(Stable_States))
+```
+
+Again we check our estimate of probabilities against the MaBoSS predictions.
+
+```{r}
+# Probabilities of stable states
+
+Probs<-c()
+for (stable in unique(Stable_States)){
+  count<-0
+  for (state in Stable_States){
+    if (all(state==stable)){
+      count <-count +1
+    }
+  }
+  Probs<-append(Probs,count/N)
 }
 ```
 
 ```{r}
-unique(Stable_States)
+# Importing MaBoSS results
+MaBoSS_results<-read.csv('Models/Cohen_MaBoSS_out_fp.csv', sep = "\t",skip=1)
+
+# Getting probabilities of all 9 stable states
+MaBoSS_Probs<-MaBoSS_results$Proba
+
+# Getting all 9 stable states
+MaBoSS_Mat<-MaBoSS_results[,4:23]
+n<-nrow(MaBoSS_Mat)
+maboss_states<-list(rep(NA,n))
+for(i in 1:n){
+  
+  maboss_states[[i]]<-colnames(MaBoSS_Mat)[as.logical(MaBoSS_Mat[i,])]
+  
+}
 ```
 
 ```{r}
-Variable_Genes
+# Syncing up MaBoSS states and our states so probabilities match
+
+Named_Stable_States<-list(rep(NA,num.genes))
+g<-1
+for (state in unique(Stable_States)){
+  #print(c(rev(Input_Genes),Variable_Genes)[as.logical(state)])
+  Named_Stable_States[[g]]<-c(rev(Input_Genes),Variable_Genes)[as.logical(state)]
+  g<-g+1
+}
+
+new.order<-rep(0,9)
+for (i in 1:9){
+  
+  for(j in 1:9){
+    
+    if(all(maboss_states[[i]] %in% Named_Stable_States[[j]]) & length(maboss_states[[i]])==length(Named_Stable_States[[j]])){
+      
+      new.order[j]<-i
+    }
+  
+  }
+
+}
+
 ```
+
+```{r}
+# Plotting
+plot(Probs,ylim=c(0,.4))
+points(MaBoSS_Probs[new.order],col='red')
+```
+
+
 
 
