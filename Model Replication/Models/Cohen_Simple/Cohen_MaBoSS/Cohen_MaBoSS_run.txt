@@ -2,11 +2,11 @@
 -------------------------------------------------- Run --------------------------------------------------
 MaBoSS version: 2.5.4 [networks up to 64 nodes]
 
-Run start time: Wed Mar 27 13:49:13 2024
-Run end time: Wed Mar 27 13:49:13 2024
+Run start time: Mon Apr  1 17:27:58 2024
+Run end time: Mon Apr  1 17:27:59 2024
 
-Core user runtime: 1.41 secs using 4 threads
-Core elapsed runtime: 0.363 secs using 4 threads
+Core user runtime: 4.54 secs using 4 threads
+Core elapsed runtime: 1.466 secs using 4 threads
 
 Epilogue user runtime: 0 secs using 1 thread
 Epilogue elapsed runtime: 0.001 secs using 1 thread
@@ -15,14 +15,14 @@ StatDist user runtime: 0 secs using 1 thread
 StatDist elapsed runtime: 0 secs using 1 thread
 
 Time Tick: 0.1
-Max Time: 50
+Max Time: 200
 Sample Count: 50000
 StatDist Trajectory Count: 100
 StatDist Similarity Cache Maximum Size: 20000
-Discrete Time: FALSE
+Discrete Time: TRUE
 Random Generator: rand48
 Seed Pseudo Random: 100
-Generated Number Count: 1396565
+Generated Number Count: 1782505
 
 ---------------------------------------------------------------------------------------------------------
 
