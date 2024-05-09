@@ -3,8 +3,8 @@ title: "Model Replication"
 author: "Daniel Gardner"
 date: "2024-04-01"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -257,10 +257,11 @@ MaBoSS_Comparison<-function(MaBoSS_csv,Named_Stable_States,Probs){
   # Plotting our estimated probabilities versus MaBoSS' in red
   PlotData<-data.frame(State=seq(1,n),
                        Probability=c(Probs,MaBoSS_Probs[new.order]),
-                       Estimate=c(rep('Mine',n),rep('MaBoSS',n)))
+                       Estimate=c(rep('R Replication',n),rep('MaBoSS',n)))
   
   plot<-ggplot(PlotData,aes(x=as.factor(State),y=Probability,col=Estimate)) +
-    geom_point(alpha=.5) +
+    geom_point(alpha=.9) +
+    xlab("Stable State")
     theme_light()
   return(plot)
   
@@ -282,13 +283,14 @@ Cohen_Simple<-CreateModel(loadNetwork('Models/Cohen_Simple/CohenSimpleModel.bnet
 
 # Then running simulations
 start <- Sys.time()
-Cohen_Simple_Sims<-FindStableStates(Cohen_Simple,c('ECMicroenv','DNAdamage'),10000,300)
+Cohen_Simple_Sims<-FindStableStates(Cohen_Simple,c('ECMicroenv','DNAdamage'),1000,300)
 end<-Sys.time()
 
 print(end-start)
 
 # Then importing MaBoSS results and seeing if ours match
-Cohen_Simple_MaBoSS<-read.csv('Models/Cohen_Simple/Cohen_MaBoSS/Cohen_MaBoSS_fp.csv', sep = "\t",skip=1)
+Cohen_Simple_MaBoSS<-read.csv('Models/Cohen_Simple/Cohen_MaBoSS/Cohen_MaBoSS_fp.csv'
+                              , sep = "\t",skip=1)
 MaBoSS_Comparison(Cohen_Simple_MaBoSS,Cohen_Simple_Sims[[2]],Cohen_Simple_Sims[[3]])
 ```
 
@@ -304,13 +306,14 @@ Cohen_Full<-CreateModel(loadNetwork('Models/Cohen_Full/Cohen_Full.bnet'))
 
 # Then running simulations
 start <- Sys.time()
-Cohen_Full_Sims<-FindStableStates(Cohen_Full,c('ECMicroenv','DNAdamage'),10000,300)
+Cohen_Full_Sims<-FindStableStates(Cohen_Full,c('ECMicroenv','DNAdamage'),1000,300)
 end <- Sys.time()
 
 print(end-start)
 
 # Then importing MaBoSS results and seeing if ours match
-Cohen_Full_MaBoSS<-read.csv('Models/Cohen_Full/Cohen_Full_MaBoSS/Cohen_Full_MaBoSS_fp.csv', sep = "\t",skip=1)
+Cohen_Full_MaBoSS<-read.csv('Models/Cohen_Full/Cohen_Full_MaBoSS/Cohen_Full_MaBoSS_fp.csv',
+                            sep = "\t",skip=1)
 MaBoSS_Comparison(Cohen_Full_MaBoSS,Cohen_Full_Sims[[2]],Cohen_Full_Sims[[3]])
 ```
 
@@ -335,12 +338,280 @@ Montagud<-CreateModel(loadNetwork('Models/Montagud/Montagud.bnet'))
 #MaBoSS_Comparison(Cohen_Full_MaBoSS,Cohen_Full_Sims[[2]],Cohen_Full_Sims[[3]])
 ```
 
+Due to the sheer size of this model, I was not able to run any worthwhile amount of simulations using R as the computation simply took too long.
+
+# Printing a table of stable states
+
+Here is the code for outputting the two tables of stable states as seen in the Results section of my paper.
+
+```{r}
+# Running stable state simulation for the simple model
+test<-FindStableStates(Cohen_Simple,c('ECMicroenv','DNAdamage'),1000,300)[[2]]
+
+# Creating a data frame of a blank character variable and an indexing variable
+test2<-data.frame(Stable_State=seq(1,9),Active_Components=rep('',9))
+
+for (i in 1:9){
+  
+  # Checking length of stable state (i.e. number of components)
+  len<-length(test[[i]])
+  
+  # Using 'paste' recursively to create a single charactwer variable of all
+  # components, separated by ','
+  output<-c(test[[i]][1])
+  
+  for (j in 2:len){
+    
+    output<-paste(output,",",test[[i]][j])
+    
+  }
+  
+  test2$Active_Components[i]<-output
+  
+}
+
+# Outputting character variable which I will copy into the report
+test2$Active_Components
+```
+
+
+```{r}
+# Exactly the same code as before, except now using the full model and only 
+# including input and output variables in the outputted stable state.
+
+test<-FindStableStates(Cohen_Full,c('ECMicroenv','DNAdamage'),1000,300)[[2]]
+
+test2<-data.frame(Stable_State=seq(1,9),Active_Components=rep('bruh',9))
+
+for (i in 1:9){
+  
+  len<-length(test[[i]])
+  
+  output<-c(test[[i]][1])
+  
+  for (j in 2:len){
+    
+    # Only including input and output variables
+    if (test[[i]][j] %in% c("EMT","Migration","Metastasis","Invasion",
+                            "CellCycleArrest","Apoptosis","DNAdamage",
+                            "ECMicroenv"))
+    output<-paste(output,",",test[[i]][j])
+    
+  }
+  
+  print(output)
+  
+  test2$Active_Components[i]<-output
+  
+}
+
+test2$Active_Components
+```
+
+# Effect of Mutations
+
+To assess the affect of functions, we define a function which permanently either activates or represses as gene.
+
+```{r}
+## PERMUTATIONS
+
+Permutation_Sim<-function(DataFrame, Mutant_Genes, On_Off){
+  
+  # Copying data frame
+  Time_Series<-DataFrame
+  
+  # Finding number of genes designated as 'mutated'
+  N<-length(Mutant_Genes)
+  
+  for (i in 1:N){
+    
+    # Defining mutant gene
+    Gene<-Mutant_Genes[i]
+    
+    if (On_Off[i]==1){
+      
+      # If gene is assigned 1 (i.e. overexpression), we set the rule to be 
+      # always TRUE, set the value to 1, and change the gene's associated
+      # variable to TRUE
+      
+      Time_Series$Rules[Time_Series$Genes==Gene] <- TRUE
+      Time_Series$Values[Time_Series$Genes==Gene] <- 1
+      assign(Gene,TRUE, envir = parent.frame())
+      
+    }
+    if (On_Off[i]==0){
+      
+      # If gene is assigned 0 (i.e. knockout), we set the rule to be 
+      # always FALSE, set the value to 0, and change the gene's associated
+      # variable to FALSE
+      
+      Time_Series$Rules[Time_Series$Genes==Gene] <- FALSE
+      Time_Series$Values[Time_Series$Genes==Gene] <- 0
+      assign(Gene,FALSE, envir = parent.frame())
+      
+    }
+    
+  }
+  
+  # Return edited 
+ return(Time_Series)
+  
+}
+```
+
+Using this, we can apply the function in three different scenarios, with the outputs used in section 4
+
+```{r}
+# Applying the stable state function in combination with the permutation for
+# Notch pathway overexpression
+
+test<-FindStableStates(Permutation_Sim(Cohen_Simple,c('Notch_pthw'),c(1)),
+                       c('ECMicroenv','DNAdamage'),1000,300)
+
+# Removing the input variables from the stable states to avoid repetition
+for (i in 1:8){
+  
+  test[[2]][[i]] <- test[[2]][[i]][!(test[[2]][[i]] %in% c('DNAdamage','ECMicroenv'))]
+  
+}
+
+# Outputting unique stable states
+unique(test[[2]])
+```
 
 
 
+```{r}
+# Exact same computation for p53 overexpression
+test<-FindStableStates(Permutation_Sim(Cohen_Simple,c('p53'),c(1)),
+                       c('ECMicroenv','DNAdamage'),1000,300)
+
+for (i in 1:4){
+  
+  test[[2]][[i]] <- test[[2]][[i]][!(test[[2]][[i]] %in% c('DNAdamage','ECMicroenv'))]
+  
+}
+
+unique(test[[2]])
+```
+
+```{r}
+# Exact same computation for TGFb pathway knockout, Notch pathway overexpression
+# and p53 knockout
+
+test<-FindStableStates(Permutation_Sim(Cohen_Simple,
+                                       c('TGFb_pthw','Notch_pthw','p53'),
+                                       c(0,1,0)),c('ECMicroenv','DNAdamage'),
+                                        1000,300)
+
+for (i in 1:4){
+  
+  test[[2]][[i]] <- test[[2]][[i]][!(test[[2]][[i]] %in% c('DNAdamage','ECMicroenv'))]
+  
+}
+
+unique(test[[2]])
+```
+
+# PCA Plots
+
+This is a simple PCA plot, using the MCA function from the package `factomineR`, which replicates the plots from Montagud (2019), except with the simplified Cohen model as opposed to the full one.
+
+```{r}
+set.seed(123)
+library(mltools)
+library(tidyverse)
+library(data.table)
+library(FactoMineR)
+library(cowplot)
+
+# Computing wild type stable states
+Wild_Type <- FindStableStates(Cohen_Simple,c('ECMicroenv','DNAdamage'),1000,300)
+
+# List of all genes
+Genes<-Cohen_Simple$Genes
+
+# List of all genes not including input genes
+Variable_Genes<-Genes[!(Genes %in% c('DNAdamage','ECMicroenv'))]
+
+# Rearranging genes to align with the output of the 'FindStableStates' function
+Genes<-c('DNAdamage','ECMicroenv',Variable_Genes)
+
+# Creating blank matrix of results
+PCA_Matrix<-matrix(NA,ncol=20,nrow=9)
+
+# Filling blank matrix with each wild type stable state
+for(i in 1:9){
+  
+  PCA_Matrix[i,] <- Wild_Type[[1]][[i]]
+  
+}
+
+# Parsing matrix into a data frame
+PCA_Data<-data.frame(PCA_Matrix)
+colnames(PCA_Data) <- Genes
+
+# Removing AKT1 and WNT pathway as they have only '0' entries
+PCA_Data <- PCA_Data[,!(Genes %in% c('AKT1','WNT_pthw'))]
+
+# Turning the whole thing to factor variables to work for MCA
+PCA_Data<-mutate_if(PCA_Data,is.double,as.factor)
+```
+
+
+```{r}
+library(ggrepel)
+
+# Estimating MCA model
+mcamodel<-MCA(PCA_Data,graph=FALSE)
+
+# Getting variable data (Automatically one-hot encoded)
+Vars<-data.frame(mcamodel$var$coord,Name=row.names(mcamodel$var$coord))
+
+# Getting only the 'Is present' rows for each variable
+Pos_Vars<-Vars[seq(2,40,2),]
+
+# Getting observations
+Obs<-data.frame(mcamodel$ind$coord, State=seq(1,9))
+
+# Removing '_1' off the end of every variable name
+Pos_Vars$Name <- sapply(Pos_Vars$Name,function(x){substr(x,1,nchar(x)-2)})
+
+# Plotting PCA 
+cols<-c('blue','green','red','blue','red','green','red','black','red')
+
+plot1<-ggplot(Obs,aes(x=Dim.1,y=Dim.2,label=Name)) +
+  geom_label(aes(label=State),colour=cols) +
+   geom_segment(data=Pos_Vars,aes(x=rep(0,20),y=rep(0,20),xend=Dim.1,yend=Dim.2),
+                arrow = arrow(length=unit(0.2, 'cm')),alpha=.7) +
+  geom_text_repel(data=Pos_Vars,aes(x=Dim.1,y=Dim.2,label=Name),alpha=.9)+
+  ggtitle('PCA projection of 9 stable states and 20 state components')
+
+plot1
+```
 
 
 
+Finally we create a pie chart of all the different states and associated phenotypes, similar again to the one provided in Montagud (2019).
 
+
+```{r}
+library(dplyr)
+
+# Getting data frame of probabilities from the wild type output
+data <- data.frame(value=Wild_Type[[3]],col=cols)
+
+# Rearranging columns so the colours(phenotypes) match up
+data <- data[c(3,5,7,9,2,6,1,4,8),]
+
+# Plotting pie chart
+plot3<- ggplot(data, aes(x="", y=value, fill=col)) +
+  geom_bar(stat="identity", width=1, color="white",fill=cols[c(3,5,7,9,2,6,1,4,8)]) +
+  coord_polar("y", start=0) +
+  theme_void() +
+  ggtitle('Probabilities of four phenotypes in wild type model')
+
+plot3
+```
 
 
